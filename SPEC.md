@@ -17,7 +17,7 @@ Items marked **[DECIDE]** belong to the author. Do not choose them silently.
 
 **What it does**
 - Chats by text or voice. The robot answers in short spoken segments with an expression and a gesture for each.
-- Offers five bounded exercises: grounding (5-4-3-2-1), box breathing, a short thought record, a smallest-next-steps planner (at most three tasks), and a wind-down routine.
+- Offers six bounded exercises: grounding (5-4-3-2-1), box breathing, a short thought record, a smallest-next-steps planner (at most three tasks), a wind-down routine, and a session-only consistency check-in (added by the author; nothing is stored between visits).
 - Encourages contact with real people.
 
 **What it never does**
@@ -51,9 +51,10 @@ The TypeScript below shows the shape. Implement it as Pydantic v2 models with `L
 type RiskLevel = "none" | "elevated" | "high";
 type Expression = "neutral" | "warm" | "soft" | "curious" | "happy" | "calm";
 type Gesture = "none" | "wave" | "nod" | "hand_on_chest" | "open_palms"
-             | "count" | "point_to_light" | "thumbs_up" | "palm_out";   // [DECIDE] final list
+             | "count" | "point_to_light" | "thumbs_up" | "palm_out"
+             | "clap" | "open_arms";   // clap and open_arms added by the author; [DECIDE] final list still open
 type ExerciseId = "grounding_54321" | "box_breathing" | "thought_record"
-                | "smallest_steps" | "winddown";
+                | "smallest_steps" | "winddown" | "consistency_checkin";
 
 interface Segment { say: string; expression: Expression; gesture: Gesture; count?: 1|2|3|4|5 }
 interface Resource { name: string; contact: string; country: string; verifiedOn: string }

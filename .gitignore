@@ -14,5 +14,11 @@ __pycache__/
 node_modules/
 .next/
 
+# Personal Claude Code settings
+.claude/settings.local.json
+
+# Licensed 3D source assets (do not redistribute the raw files)
+assets-src/
+
 # Held-out evals
 evals/heldout/
