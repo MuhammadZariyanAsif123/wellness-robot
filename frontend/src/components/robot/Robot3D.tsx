@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useSyncExternalStore } from "react";
 import { hasWebGL } from "@/lib/webgl";
 import type { Expression, RobotState } from "@/lib/turn";
+import type { GestureCommand } from "./gestures";
 import { visualFor } from "./states";
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
   state: RobotState;
   /** Dev panel override; null/undefined follows the system setting. */
   reducedMotionOverride?: boolean | null;
+  /** Gesture to play (ignored in safe mode). */
+  gesture?: GestureCommand | null;
 }
 
 const frame: React.CSSProperties = {
@@ -47,7 +50,7 @@ function Placeholder({ text }: { text: string }) {
 
 const subscribeNever = (): (() => void) => () => undefined;
 
-export function Robot3D({ expression, state, reducedMotionOverride }: Props) {
+export function Robot3D({ expression, state, reducedMotionOverride, gesture }: Props) {
   // null on the server, a boolean on the client, without setState in an effect.
   const webgl = useSyncExternalStore<boolean | null>(subscribeNever, hasWebGL, () => null);
   const visual = visualFor(state, expression);
@@ -64,7 +67,12 @@ export function Robot3D({ expression, state, reducedMotionOverride }: Props) {
       {webgl === null ? (
         <Placeholder text="Loading the robot…" />
       ) : webgl ? (
-        <RobotScene expression={expression} state={state} reducedMotionOverride={reducedMotionOverride} />
+        <RobotScene
+          expression={expression}
+          state={state}
+          reducedMotionOverride={reducedMotionOverride}
+          gesture={gesture}
+        />
       ) : (
         <Placeholder text="Your browser can't show the 3D robot (WebGL is unavailable). Everything else still works as text." />
       )}

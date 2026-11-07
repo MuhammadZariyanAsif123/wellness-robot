@@ -9,6 +9,16 @@ import { useReducedMotion } from "@/lib/motion/useReducedMotion";
 import type { Expression, RobotState } from "@/lib/turn";
 import { FACES } from "./expressions";
 import { FACE_H, FACE_W, drawFace, type LedTint, type Live } from "./face";
+import {
+  GESTURES,
+  REDUCED_HOLD_SECONDS,
+  REDUCED_MOTION_SECONDS,
+  REST_POSE,
+  lerpArm,
+  type ArmPose,
+  type GestureCommand,
+  type Pose,
+} from "./gestures";
 import { visualFor } from "./states";
 
 gsap.registerPlugin(useGSAP);
@@ -17,6 +27,13 @@ export interface RobotModelProps {
   expression: Expression;
   state: RobotState;
   reducedMotionOverride?: boolean | null;
+  /** Gesture to play; ignored in safe mode. */
+  gesture?: GestureCommand | null;
+}
+
+interface ArmRefs {
+  shoulder: React.RefObject<THREE.Group | null>;
+  elbow: React.RefObject<THREE.Group | null>;
 }
 
 const TINTS = {
@@ -47,12 +64,24 @@ function Metal({ children, ...rest }: React.ComponentProps<"mesh">) {
 }
 
 /** Two-part arm: shoulder pivot, upper arm, elbow pivot, forearm, mitten hand. */
-function Arm({ side }: { side: 1 | -1 }) {
+function Arm({
+  side,
+  shoulderRef,
+  elbowRef,
+  children,
+}: {
+  side: 1 | -1;
+  shoulderRef: React.RefObject<THREE.Group | null>;
+  elbowRef: React.RefObject<THREE.Group | null>;
+  /** Extras that ride on the forearm (count badge, thumb). */
+  children?: React.ReactNode;
+}) {
   return (
     <group
+      ref={shoulderRef}
       name={side < 0 ? "arm-left" : "arm-right"}
       position={[side * 0.74, 1.3, 0]}
-      rotation={[0, 0, side * 0.12]}
+      rotation={[REST_POSE.right.shoulderX, 0, side * REST_POSE.right.shoulderZ]}
     >
       <Metal>
         <sphereGeometry args={[0.17, 32, 32]} />
@@ -60,7 +89,7 @@ function Arm({ side }: { side: 1 | -1 }) {
       <Shell position={[0, -0.32, 0]}>
         <capsuleGeometry args={[0.1, 0.32, 8, 20]} />
       </Shell>
-      <group name="elbow" position={[0, -0.6, 0]} rotation={[-0.1, 0, 0]}>
+      <group ref={elbowRef} name="elbow" position={[0, -0.6, 0]} rotation={[REST_POSE.right.elbowX, 0, 0]}>
         <Metal>
           <sphereGeometry args={[0.12, 24, 24]} />
         </Metal>
@@ -70,12 +99,22 @@ function Arm({ side }: { side: 1 | -1 }) {
         <Shell position={[0, -0.54, 0]} scale={[1, 1.15, 0.8]}>
           <sphereGeometry args={[0.14, 28, 28]} />
         </Shell>
+        {children}
       </group>
     </group>
   );
 }
 
-export function RobotModel({ expression, state, reducedMotionOverride }: RobotModelProps) {
+/** Applies one arm's pose. Mirrored for the left arm so "out" is away from the body. */
+function setArm(refs: ArmRefs, side: 1 | -1, p: ArmPose): void {
+  if (refs.shoulder.current) {
+    refs.shoulder.current.rotation.x = p.shoulderX;
+    refs.shoulder.current.rotation.z = side * p.shoulderZ;
+  }
+  if (refs.elbow.current) refs.elbow.current.rotation.x = p.elbowX;
+}
+
+export function RobotModel({ expression, state, reducedMotionOverride, gesture }: RobotModelProps) {
   const reduced = useReducedMotion(reducedMotionOverride);
   const visual = visualFor(state, expression);
   const tint = TINTS[visual.glow];
@@ -83,6 +122,13 @@ export function RobotModel({ expression, state, reducedMotionOverride }: RobotMo
   const root = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
   const light = useRef<THREE.PointLight>(null);
+  const rShoulderRef = useRef<THREE.Group>(null);
+  const rElbowRef = useRef<THREE.Group>(null);
+  const lShoulderRef = useRef<THREE.Group>(null);
+  const lElbowRef = useRef<THREE.Group>(null);
+  const rightArm: ArmRefs = { shoulder: rShoulderRef, elbow: rElbowRef };
+  const leftArm: ArmRefs = { shoulder: lShoulderRef, elbow: lElbowRef };
+  const thumb = useRef<THREE.Mesh>(null);
 
   const live = useRef<Live>({
     ...FACES[visual.expression],
@@ -218,6 +264,97 @@ export function RobotModel({ expression, state, reducedMotionOverride }: RobotMo
     { dependencies: [visual.glow, reduced] },
   );
 
+  // Gestures: one at a time, never in safe mode. Reduced motion: brief pose change, no repeats.
+  useGSAP(
+    () => {
+      if (!gesture || state === "safe" || gesture.gesture === "none") return;
+      const def = GESTURES[gesture.gesture];
+      const headEl = head.current;
+      const rShoulder = rightArm.shoulder.current?.rotation;
+      const lShoulder = leftArm.shoulder.current?.rotation;
+      const rElbow = rightArm.elbow.current?.rotation;
+      const lElbow = leftArm.elbow.current?.rotation;
+
+      const showExtras = (on: boolean): void => {
+        if (thumb.current) thumb.current.visible = on && Boolean(def.showsThumb);
+      };
+
+      /** All joints move to a pose together. The left arm is mirrored. */
+      const poseTween = (p: Pose, duration: number, ease: string): gsap.core.Timeline => {
+        const t = gsap.timeline();
+        const add = (target: object | undefined, vars: gsap.TweenVars): void => {
+          if (target) t.to(target, { ...vars, duration, ease }, 0);
+        };
+        add(rShoulder, { x: p.right.shoulderX, z: p.right.shoulderZ });
+        add(lShoulder, { x: p.left.shoulderX, z: -p.left.shoulderZ });
+        add(rElbow, { x: p.right.elbowX });
+        add(lElbow, { x: p.left.elbowX });
+        add(headEl?.rotation, { x: p.headX });
+        return t;
+      };
+
+      /** Moves one axis of several rotations together. */
+      const axisTween = (targets: (object | undefined)[], axis: "x" | "z", to: number, duration: number): gsap.core.Timeline => {
+        const t = gsap.timeline();
+        for (const target of targets) if (target) t.to(target, { [axis]: to, duration, ease: "sine.inOut" }, 0);
+        return t;
+      };
+
+      const tl = gsap.timeline({ onComplete: () => showExtras(false) });
+      tl.call(() => showExtras(true));
+
+      if (reduced) {
+        tl.add(poseTween(def.peak, REDUCED_MOTION_SECONDS, "power1.out"));
+        tl.to({}, { duration: REDUCED_HOLD_SECONDS });
+        tl.add(poseTween(REST_POSE, REDUCED_MOTION_SECONDS, "power1.in"));
+        return;
+      }
+
+      // Anticipation: a small counter-move, then the sweep (<= 400 ms).
+      if (def.anticipation > 0) {
+        tl.add(
+          poseTween(
+            { ...REST_POSE, right: lerpArm(REST_POSE.right, def.peak.right, -0.08), left: lerpArm(REST_POSE.left, def.peak.left, -0.08) },
+            def.anticipation,
+            "power1.in",
+          ),
+        );
+      }
+      tl.add(poseTween(def.peak, def.sweep, "power2.out"));
+
+      const r = def.repeat;
+      if (r) {
+        const half = r.period / 2;
+        for (let i = 0; i < r.times; i++) {
+          if (r.joint === "rightForearm") {
+            tl.add(axisTween([rElbow], "z", r.amount, half));
+            tl.add(axisTween([rElbow], "z", -r.amount, half));
+          } else if (r.joint === "bothElbows") {
+            tl.add(axisTween([rElbow, lElbow], "x", def.peak.right.elbowX - r.amount, half));
+            tl.add(axisTween([rElbow, lElbow], "x", def.peak.right.elbowX, half));
+          } else {
+            tl.add(axisTween([headEl?.rotation], "x", 0, half));
+            tl.add(axisTween([headEl?.rotation], "x", def.peak.headX, half));
+          }
+        }
+        if (r.joint === "rightForearm") tl.add(axisTween([rElbow], "z", 0, 0.1));
+      }
+
+      tl.to({}, { duration: def.hold });
+      tl.add(poseTween(REST_POSE, 0.35, "power2.inOut"));
+
+      return () => {
+        // A new gesture (or unmount) snaps back to rest before the next one starts.
+        setArm(rightArm, 1, REST_POSE.right);
+        setArm(leftArm, -1, REST_POSE.left);
+        if (rElbow) rElbow.z = 0;
+        if (headEl) headEl.rotation.x = 0;
+        showExtras(false);
+      };
+    },
+    { dependencies: [gesture?.id, state === "safe", reduced] },
+  );
+
   // Entrance, once on mount. Skipped for reduced motion and safe mode.
   useGSAP(() => {
     draw();
@@ -269,8 +406,13 @@ export function RobotModel({ expression, state, reducedMotionOverride }: RobotMo
         <meshPhysicalMaterial color="#ebe3d8" roughness={0.3} clearcoat={0.8} clearcoatRoughness={0.2} />
       </RoundedBox>
 
-      <Arm side={-1} />
-      <Arm side={1} />
+      <Arm side={-1} shoulderRef={lShoulderRef} elbowRef={lElbowRef} />
+      <Arm side={1} shoulderRef={rShoulderRef} elbowRef={rElbowRef}>
+        {/* Thumb: only visible for `thumbs_up`. */}
+        <Shell ref={thumb} position={[0.12, -0.6, 0.05]} rotation={[0, 0, -0.5]} visible={false}>
+          <capsuleGeometry args={[0.045, 0.1, 6, 12]} />
+        </Shell>
+      </Arm>
 
       <pointLight ref={light} position={[0, 2.3, 2.4]} intensity={0} distance={8} />
     </group>
