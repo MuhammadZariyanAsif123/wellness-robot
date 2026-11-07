@@ -101,8 +101,9 @@ Rules:
 Inputs: the author's design-tokens note at `docs/design-tokens.md` (produced in slice 0). Follow it for palette, type, spacing, and motion timing.
 
 **Robot states:** idle, listening, thinking, speaking, exercise, safe.
-**Expressions:** map to eye shape and mouth.
-**Gestures:** two-part SVG arms rotating at shoulder and elbow (CSS transforms or a motion library). Hands are simple mitten shapes. `count` shows a number badge beside the raised hand.
+**Robot rendering:** a 3D robot built from code with Three.js (react-three-fiber), changed from the original SVG at the author's request so it looks real. No downloaded model or HDR files; lighting is procedural. Falls back to a text message if WebGL is unavailable.
+**Expressions:** map to eye shape, brows, mouth, and blush on an LED face.
+**Gestures:** two-part arms (shoulder and elbow pivots) animated with GSAP. Hands are simple mitten shapes. `count` shows a number badge beside the raised hand.
 
 Rules:
 - At most one gesture per segment. Gestures never start while the user is speaking, except a nod.
@@ -159,7 +160,7 @@ Set every **[DECIDE]** target before the first run.
 
 ## 11. Slices (stop and report after each)
 0. **Setup and design reference.** Monorepo scaffold: `frontend/` (Next.js) and `backend/` (FastAPI with a health endpoint, CORS for the frontend origin, a virtual environment), `CLAUDE.md` in place, git initialized, `backend/.env.example` and `frontend/.env.example`. Run the Awwwards MCP (pinned version) to gather 3 references and write `docs/design-tokens.md`. *Gate: the author approves the direction.*
-1. **Robot UI.** The SVG robot, expressions, and states, driven by a hard-coded Turn so it works without any backend. A small dev panel to trigger each state. *Gate: every state looks right, including safe mode and reduced motion.*
+1. **Robot UI.** The 3D robot (built from code), expressions, and states, driven by a hard-coded Turn so it works without any backend. A small dev panel to trigger each state. *Gate: every state looks right, including safe mode and reduced motion.*
 2. **Gestures and the action layer.** All gestures, the sequencer that plays segments, and a defensive runtime check of each Turn received from the backend (unknown gestures are rejected). *Gate: invalid gestures are rejected; one gesture per segment.*
 3. **Risk router, responder, and `POST /turn` (FastAPI).** Includes generating the frontend types from the OpenAPI schema and wiring the UI to the endpoint. Deterministic screen, classifier, responder, forbidden-pattern check, scripted exercises. *Gate: send a distressing test message and confirm safe mode, with no responder call.*
 4. **Voice.** `BrowserVoice`, push-to-talk, mouth sync, then the optional `ElevenLabsVoice` with fallback. *Gate: kill the key and confirm the fallback.*

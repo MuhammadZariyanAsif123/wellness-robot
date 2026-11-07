@@ -21,7 +21,7 @@ Gathered with the Awwwards MCP. The tool returned thin palette data for these en
 | Site | Slug | What I take from it (idea level only) |
 |---|---|---|
 | La Magadán | `la-magadan` | A brief of "brands that feel human": organic, hand-made shapes and an editorial serif give warmth. We take the idea of one expressive display serif against calm neutrals, but with a far quieter palette (its own palette is loud and saturated, which does not suit this app). |
-| 3MOONS Studio | `3moons-studio` | A soft, tactile, rounded character on a flat muted ground. We take the idea of a friendly mascot with simple rounded forms and blush accents, rendered as flat SVG, not 3D. |
+| 3MOONS Studio | `3moons-studio` | A soft, tactile, rounded character on a flat muted ground. We take the idea of a friendly mascot with simple rounded forms and blush accents, originally imagined as flat SVG; the author later chose a code-built 3D robot (section 7). |
 | Agrumea Farm (SOTD, Nov 2026) | `agrumea-farm` | Warm, unhurried pacing and generous space. We take the idea of slow, smooth transitions; we do **not** use WebGL, smooth-scroll hijacking, or its heavy stack. |
 
 **Author to confirm or replace:** these three are a reasonable but not ideal match (none is a wellness product). If you prefer, I can search again with different tags.
@@ -108,19 +108,22 @@ Rules
 - `prefers-reduced-motion: reduce`: replace sweeping arm motion and the breathing scale animation with a brief pose change (about 100 ms) and a text cue; no parallax, no looping glow.
 - Mouth movement while speaking is driven by speech state, not a decorative loop.
 
-## 7. Robot visual spec (for slice 1)
+## 7. Robot visual spec (3D, built from code)
 
-- Flat SVG, no gradients except one soft radial `--glow` behind the head (off in safe mode).
-- Head: rounded rectangle, `--surface` fill, 2 px `--ink` outline. Eyes and mouth in `--ink`.
-- Expressions map to eye shape and mouth: `neutral`, `warm`, `soft`, `curious`, `happy`, `calm` (enum from `backend/app/schemas.py`; do not add entries).
-- Blush circles appear on `warm` and `happy` only, using `--glow` at 60% opacity.
-- Arms: two-part (shoulder, elbow), mitten hands, `--surface-muted` fill with `--ink` outline. `count` badge: `--accent` fill, `--accent-ink` number, 28 px circle.
-- Safe mode: `neutral` face, arms down, no glow, `--safe-ink` outline.
+Changed from the original flat SVG at the author's request ("the robot should look real"). The robot is a procedural 3D model (Three.js via react-three-fiber). No model file, texture or HDR is downloaded, and no third-party request is made at runtime.
+
+- Materials: glossy porcelain shell (`MeshPhysicalMaterial`, clearcoat) for head and limbs, brushed-metal joints, dark glass visor. Colors follow the tokens: shell near `--surface`, torso near `--surface-muted`.
+- Lighting: procedural studio lighting (Lightformers inside `Environment`, a key light, soft contact shadow on the floor). No HDR presets or `files=`.
+- Face: a glowing LED face painted on the visor. Warm LED by default, cooler in exercises, cool and plain in safe mode. A warm point light in front of the face (off in safe mode) replaces the old SVG glow.
+- Expressions map to eye shape, brows, mouth, and blush: `neutral`, `warm`, `soft`, `curious`, `happy`, `calm` (enum from `backend/app/schemas.py`; do not add entries). Blush appears on `warm` and `happy` only.
+- Arms: two-part (shoulder pivot, elbow pivot), mitten hands. `count` badge: `--accent` fill, `--accent-ink` number, 28 px circle, shown beside the raised hand.
+- Safe mode: `neutral` face, arms down, no glow, cool LED, slow blink only.
+- Fallbacks: a placeholder while the 3D scene loads, and a text-only message if WebGL is unavailable.
 
 ## 8. Accessibility checklist
 
 - Every interactive element has a visible focus ring using `--focus`.
-- Every control has an accessible name; the robot SVG has a text alternative describing the current expression and state.
+- Every control has an accessible name; the robot (3D canvas) has a text alternative on its wrapper describing the current expression and state.
 - Transcript always visible next to the voice, live-region announced politely (not assertive, except safe-mode message).
 - Contrast: all text pairs above meet at least 4.5:1.
 - Full keyboard operation, including push-to-talk (a toggle for keyboard users) and the text-only switch.
