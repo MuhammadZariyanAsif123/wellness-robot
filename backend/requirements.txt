@@ -1,0 +1,7 @@
+# Runtime dependencies for hosts that install with pip (e.g. Render).
+# pyproject.toml remains the source of truth: keep these in step with it.
+fastapi
+uvicorn
+pydantic-settings
+google-genai>=2.3.0
+httpx

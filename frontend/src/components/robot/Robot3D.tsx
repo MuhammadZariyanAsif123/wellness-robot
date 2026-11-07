@@ -18,7 +18,7 @@ interface Props {
 
 const frame: React.CSSProperties = {
   width: "100%",
-  maxWidth: 460,
+  maxWidth: "min(100%, var(--robot-max, 68dvh))",
   aspectRatio: "1 / 1.1",
   display: "grid",
   placeItems: "center",

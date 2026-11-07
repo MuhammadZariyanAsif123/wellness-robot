@@ -20,4 +20,4 @@ def handle_turn(req: TurnRequest, llm: LLM | None, classifier_model: str, respon
         log.info("responder_skipped")
         return safe_turn()
 
-    return respond(req.message, req.history, level, llm, responder_model)
+    return respond(req.message, req.history, level, llm, responder_model, req.current_step)

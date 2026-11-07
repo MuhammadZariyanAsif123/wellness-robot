@@ -73,4 +73,22 @@ describe("parseTurn", () => {
     expect(reason(turn({ ...safe, segments: [seg({ expression: "warm" })] }))).toMatch(/safe mode/);
     expect(reason(turn({ ...safe, segments: [seg({ expression: "neutral" })], exercise: "box_breathing" }))).toMatch(/safe mode/);
   });
+
+  it("accepts a short plan_step and rejects bad ones", () => {
+    expect(parseTurn(turn({ plan_step: "Open my notes for ten minutes" })).ok).toBe(true);
+    expect(parseTurn(turn({ plan_step: null })).ok).toBe(true);
+    expect(reason(turn({ plan_step: "" }))).toMatch(/plan_step/);
+    expect(reason(turn({ plan_step: "x".repeat(161) }))).toMatch(/plan_step/);
+    expect(reason(turn({ plan_step: 5 }))).toMatch(/plan_step/);
+  });
+
+  it("rejects a plan_step in safe mode", () => {
+    const safe = {
+      mode: "safe",
+      risk: "high",
+      segments: [seg({ expression: "neutral" })],
+      plan_step: "Open my notes",
+    };
+    expect(reason(turn(safe))).toMatch(/plan step/);
+  });
 });

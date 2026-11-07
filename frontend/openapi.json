@@ -345,6 +345,19 @@
             "maxItems": 12,
             "title": "Exercise Steps"
           },
+          "plan_step": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Step"
+          },
           "resources": {
             "items": {
               "$ref": "#/components/schemas/Resource"
@@ -381,6 +394,18 @@
             "type": "boolean",
             "title": "Safe Locked",
             "default": false
+          },
+          "current_step": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Step"
           }
         },
         "type": "object",

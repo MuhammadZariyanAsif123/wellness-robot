@@ -6,6 +6,26 @@ export interface SynthLike {
   speak(utterance: SpeechSynthesisUtterance): void;
   cancel(): void;
   getVoices(): SpeechSynthesisVoice[];
+  addEventListener?(type: "voiceschanged", listener: () => void): void;
+  removeEventListener?(type: "voiceschanged", listener: () => void): void;
+}
+
+const VOICES_WAIT_MS = 1500;
+
+/** Browsers load voices lazily, so the first call often sees an empty list. Wait briefly for them. */
+function voicesReady(synth: SynthLike, signal: AbortSignal): Promise<void> {
+  if (synth.getVoices().length > 0 || !synth.addEventListener) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const finish = (): void => {
+      clearTimeout(timer);
+      synth.removeEventListener?.("voiceschanged", finish);
+      signal.removeEventListener("abort", finish);
+      resolve();
+    };
+    const timer = setTimeout(finish, VOICES_WAIT_MS);
+    synth.addEventListener?.("voiceschanged", finish);
+    signal.addEventListener("abort", finish, { once: true });
+  });
 }
 
 export interface BrowserVoiceDeps {
@@ -26,17 +46,22 @@ export class BrowserVoice implements VoiceProvider {
 
   constructor(deps: BrowserVoiceDeps = {}) {
     this.deps = deps;
+    this.synth?.getVoices(); // starts the browser loading its voices early
   }
 
   private get synth(): SynthLike | null {
     return this.deps.synth === undefined ? defaultSynth() : this.deps.synth;
   }
 
-  speak(text: string, signal: AbortSignal): Promise<void> {
+  async speak(text: string, signal: AbortSignal): Promise<void> {
     const synth = this.synth;
     const fallback = this.deps.fallback ?? timedSpeaker();
+    if (synth) await voicesReady(synth, signal);
     if (!synth || synth.getVoices().length === 0) return fallback(text, signal);
-    if (signal.aborted) return Promise.reject(abortError());
+    if (signal.aborted) {
+      synth.cancel();
+      throw abortError();
+    }
 
     const make = this.deps.makeUtterance ?? ((t: string) => new SpeechSynthesisUtterance(t));
     return new Promise<void>((resolve, reject) => {

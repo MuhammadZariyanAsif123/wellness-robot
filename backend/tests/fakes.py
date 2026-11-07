@@ -24,10 +24,12 @@ def classifier_reply(level: str) -> str:
 
 
 def responder_reply(say: str = "That sounds heavy.", gesture: str = "none", exercise: str | None = None,
-                    count: int | None = None, expression: str = "soft") -> str:
+                    count: int | None = None, expression: str = "soft",
+                    plan_step: str | None = None) -> str:
     return json.dumps(
         {
             "segments": [{"say": say, "expression": expression, "gesture": gesture, "count": count}],
             "exercise": exercise,
+            "plan_step": plan_step,
         }
     )

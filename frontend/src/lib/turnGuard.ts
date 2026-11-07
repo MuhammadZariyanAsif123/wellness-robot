@@ -16,6 +16,8 @@ const MODES: readonly string[] = S.Turn.properties.mode.enum;
 const MAX_SEGMENTS = S.Turn.properties.segments.maxItems;
 const MIN_SEGMENTS = S.Turn.properties.segments.minItems;
 const MAX_STEPS = S.Turn.properties.exercise_steps.maxItems;
+const planStepLimits: ReadonlyArray<{ type: string; maxLength?: number }> = S.Turn.properties.plan_step.anyOf;
+const MAX_PLAN_STEP: number = planStepLimits.find((a) => a.type === "string")?.maxLength ?? 160;
 
 export type ParseResult = { ok: true; turn: Turn } | { ok: false; reason: string };
 
@@ -79,6 +81,13 @@ export function parseTurn(input: unknown): ParseResult {
   }
   if (steps.length > MAX_STEPS) return fail("too many exercise steps");
 
+  const planStep = input.plan_step ?? null;
+  if (planStep !== null) {
+    if (typeof planStep !== "string" || planStep.trim() === "" || planStep.length > MAX_PLAN_STEP) {
+      return fail("plan_step must be short text");
+    }
+  }
+
   const resources = input.resources ?? [];
   if (!Array.isArray(resources)) return fail("resources is not a list");
   for (const [i, r] of resources.entries()) {
@@ -88,6 +97,7 @@ export function parseTurn(input: unknown): ParseResult {
 
   if (input.mode === "safe") {
     if (exercise !== null || steps.length > 0) return fail("safe mode allows no exercise");
+    if (planStep !== null) return fail("safe mode allows no plan step");
     for (const seg of segments as Record<string, unknown>[]) {
       if (seg.gesture !== "none" || seg.expression !== "neutral") {
         return fail("safe mode requires a neutral face and no gesture");

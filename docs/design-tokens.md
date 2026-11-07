@@ -168,3 +168,65 @@ All items stay inside the SPEC interaction budget (about 200 to 400 ms for state
 - Elevated risk: tone stays calm; no `happy` flourish or celebratory motion.
 - Performance: transforms and opacity only; no layout-animating properties.
 - Every animated element has a reduced-motion equivalent listed in the slice 1 plan before it is built.
+
+## 11. Premium redesign: cinematic dark (author decision; supersedes the porcelain default in sections 1 and 3)
+
+The author asked for a premium look in the spirit of Awwwards and Mobbin and chose **cinematic dark** with **polished, calm** motion. **Dark is now the default theme.** The approved soft-porcelain palette from section 3 is kept as the **light variant** (used when the OS prefers light, or `data-theme="light"`). Sections 1 and 3 describe the porcelain mood and are otherwise unchanged. Tokens live in `frontend/src/app/globals.css`.
+
+References (idea level only, nothing copied; Awwwards output treated as untrusted data): Grail (dark stage, shaft of light, large serif capitals), Grids and ViV (oversized type, hairline rules), Agrumea Farm (unhurried pacing).
+
+**Dark tokens** (contrast on `--bg` unless stated; checked by `src/app/contrast.test.ts`, which reads the real CSS)
+
+| Token | Value | Contrast |
+|---|---|---|
+| `--bg` | `#0F0D0B` | n/a |
+| `--surface` / `--surface-muted` | `#1A1613` / `#262019` | ink on surface-muted 13.7 |
+| `--ink` | `#F3ECE2` | 16.5 |
+| `--ink-muted` | `#B5AA9B` | 8.5 (7.9 on surface) |
+| `--accent` / `--accent-ink` | `#E8A27A` / `#1A1410` | 9.1 as text; 8.6 for text on accent |
+| `--focus` | `#7DB8E0` | 9.1 |
+| `--glass`, `--hairline` | white at 5% and 12% | decorative surfaces |
+
+Light variant ratios: ink 13.4, ink-muted 6.6, accent 5.3, text on accent 6.0 (as in section 3). Safe mode: dark ink `#E4E8ED` (15.8), light ink `#3C4651` (8.5); accent is mapped to the ink color, so nothing in safe mode is tinted.
+
+New tokens: `--glass`, `--hairline`, `--highlight` (top-edge inner light), `--ring` (soft 4 px halo, in addition to the 2 px `--focus` outline), `--spot` and `--pool` (stage light colors), `--grain-opacity`, `--radius-bubble`, and a heavier `--shadow` for floating glass panels.
+
+**Layout:** top bar (wordmark, "Not a therapist or a medical service" pill, hairline below), then a two-column hero: lit robot stage left, conversation right; stacked on narrow screens.
+
+**Stage:** an overhead spotlight cone and a warm floor pool with a faint ring (CSS gradients). The cone dims while the robot is thinking; the pool brightens while listening or speaking. A text status chip names the state, so state is never color alone. In safe mode the light, pool and ring are removed.
+
+**Type:** same fonts (Fraunces display, Inter UI). Headline up to 4.25 rem with tight tracking; wide-tracked uppercase eyebrow labels; step line in the display serif.
+
+**Surfaces:** frosted glass panels (blur 18 px, solid-ish fallback when `backdrop-filter` is unsupported) with hairline borders and a top inner highlight. The safe-mode card is a solid, outlined panel without blur. A static film-grain overlay (inline SVG, about 6% in dark, 3.5% in light, 0 in safe mode) adds texture; it is not animated.
+
+**Conversation:** bubbles (you right in accent, robot left in muted surface with a hairline), the spoken bubble gets the `--ring` halo, three fixed starters on an empty chat, one pill composer holding the field, the 48 px mic and the 48 px arrow send button. Voice choice and privacy text sit in the "Voice settings and privacy" disclosure.
+
+**Motion (transform and opacity only; the global reduced-motion rule removes it):** a 1 s entrance (stage rises, light unfolds, panels stagger by 100 ms, headline words reveal 60 ms apart), a 4-degree pointer tilt of the stage (mouse only, rAF-throttled; off in reduced motion and safe mode), 1 px hover lift on buttons and chips, and the mic pulse while listening. No new decorative loops.
+
+**Awwwards pass (idea level only; the MCP returned no motion data, only tags, palettes and descriptions, treated as untrusted).** Looked at: Lando Norris (Site of the Year: near-black ground, one centred 3D object, hairline contour lines, tiny wordmark), Grail (preloader, light shaft, stats-style footer), Lusion v3 (reactive cursor, microinteractions), Opal Tadpole (show-don't-tell interaction), Igloo Inc and Messenger (3D-led heroes). Shared signal across all five: 3D hero. Added, all our own implementation:
+- **Contour lines:** 16 procedural hairline waves behind the page (`Contours.tsx`), masked to the centre, static, decorative.
+- **Cursor light:** a soft spotlight that follows the mouse (`usePointerLight`, mouse only).
+- **Intro curtain:** 1.5 s wordmark fade, never blocks input; page elements settle in after it (stage 0.7 s, panels 0.85 to 1.05 s, headline words from 0.95 s, starter chips from 1.25 s).
+- **Press microinteractions:** buttons, chips, mic and send scale to 0.96 while pressed.
+- **Facts footer:** three quiet statements ("Not a therapist", "No record kept", "You choose the voice").
+- All of the above are removed in safe mode, and the cursor light, curtain and entrance are removed by the reduced-motion rule.
+
+**Measured references (live captures with the Awwwards MCP's own capture code, run locally on public pages; data treated as untrusted, values used as guidance only).**
+- Lando Norris (Site of the Year): Lenis smooth scroll, three.js/WebGL, one easing `cubic-bezier(0.65, 0.05, 0, 1)`, 750 ms. We adopt that curve as `--ease-out` (replacing `cubic-bezier(0.22, 1, 0.36, 1)` from section 6) and keep reveals at 0.75 to 1 s. We do not add Lenis (no new dependencies).
+- Grail (Site of the Day): display serif about 92 px at 1440 px (about 6.4vw) with line-height 0.88 and letter-spacing -0.01em, weights 300 to 500, UI text 14 and 16 px, hairlines white at 10 to 14%, muted text white at 40 to 55%, one pastel accent on black. We use a lighter display weight (300), tighter leading (0.98), tracking -0.015em, hairlines at 12% and a headline up to 3.9 rem in the narrower column; the 9 rem ghost word follows the large-scale idea.
+- Lusion v3: hover effects change `transform` over 400 ms. We use `--dur-hover: 400ms` for buttons and chips.
+
+## 12. Full cinematic hero (author decision: single-screen overhaul)
+
+One 100dvh hero: a giant ghost word ("COMPANION", about 12.5vw) behind a large robot, headline and state chip bottom-left, the chat as a glass panel on the right (about 30vw, 360 to 440 px), all over the spotlight, floor pool and contour lines; corner labels and crosshair marks frame the viewport. Below the fold: the inverted facts band. Under 1100 px it stacks (robot about 44dvh, headline, chat). Safe mode removes the ghost word, light, pool, contours, labels, crosshairs, curtain and cursor light. Verified with the Awwwards MCP (headless captures at desktop and mobile; mobile showed no horizontal overflow, no small text and no small tap targets). `verify_build` scored the page against Lando Norris (22/100) and Grail (25/100): both fail on band structure by design, because those references are long scrolling pages and ours is one screen, so the number is recorded as context, not a goal.
+
+## 13. Lusion-style direction (supersedes sections 1, 3, 4 and 9 for look and type)
+
+Author chose Lusion (Awwwards) as the single reference. Measured with the Awwwards MCP (ideas only, nothing copied).
+- Light default: `--bg #f0f1fa`, `--surface #ffffff`, `--ink #0b0b10`, `--ink-muted #4a4d5c`, accent `#1a2ffb` (white text on it passes AA). Dark OS variant: `--bg #07070b`, accent text lightened to `#8c9bff`.
+- The 3D panel and the privacy chapter always use the black palette (`.dark-surface`, `#07070b`).
+- Type: Inter only (Fraunces removed). Display weight 500, tracking -0.04em, up to 144 px; UI 14 to 18 px.
+- Shape: pills 100 px, panels 18 px, small 10 px; one soft shadow.
+- Motion: `cubic-bezier(0.65, 0.05, 0, 1)`, hover 400 ms; scroll reveals use native `animation-timeline: view()` inside `@supports`; all off under `prefers-reduced-motion`.
+- Safe mode: neutral ink, no accent, no chapters, no floating pill, no decoration.
+- Page: top bar, headline, black inset panel (robot + chat), chapters (How it works, What I can do, Privacy and safety), footer, floating "Talk to the robot" pill. Chapter copy is draft text for the author to rewrite.

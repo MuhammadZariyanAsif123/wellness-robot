@@ -5,6 +5,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.clientip import client_key
 from app.llm import LLM, build_llm
 from app.ratelimit import RateLimiter
 from app.schemas import Turn, TurnRequest, TTSRequest, TTSStatus
@@ -34,7 +35,7 @@ def create_app(
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[settings.frontend_origin],
+        allow_origins=settings.frontend_origins,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
@@ -45,7 +46,7 @@ def create_app(
 
     @app.post("/turn", response_model=Turn)
     def turn(req: TurnRequest, request: Request) -> Turn:
-        client = request.client.host if request.client else "unknown"
+        client = client_key(request, settings.client_ip_header)
         if not limiter.allow(client):
             log.info("rate_limited")
             raise HTTPException(status_code=429, detail="Too many requests")
@@ -64,7 +65,7 @@ def create_app(
     def tts(req: TTSRequest, request: Request) -> Response:
         if not tts_ready:
             raise HTTPException(status_code=503, detail="Voice service unavailable")
-        client = request.client.host if request.client else "unknown"
+        client = client_key(request, settings.client_ip_header)
         if not tts_limiter.allow(client):
             log.info("tts_rate_limited")
             raise HTTPException(status_code=429, detail="Too many requests")

@@ -7,7 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # One origin, or several separated by commas (exact match, never "*").
     frontend_origin: str = "http://localhost:3000"
+    # Name of a header the hosting proxy overwrites with the real client IP (empty = use the socket address).
+    client_ip_header: str = ""
     gemini_api_key: SecretStr | None = None
     # Model identifiers come from the environment only (see .env.example).
     # Empty means "not configured": the pipeline then fails safe, never open.
@@ -21,6 +24,10 @@ class Settings(BaseSettings):
     # In-memory rate limit for /turn: requests per window, per client address.
     turn_rate_limit: int = 20
     turn_rate_window_seconds: int = 60
+
+    @property
+    def frontend_origins(self) -> list[str]:
+        return [o.strip() for o in self.frontend_origin.split(",") if o.strip()]
 
 
 @lru_cache

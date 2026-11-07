@@ -28,24 +28,7 @@ export function Transcript({ segments, activeIndex, emptyText = "The conversatio
   }, [segments.length, thinking]);
 
   return (
-    <section
-      ref={box}
-      tabIndex={0}
-      aria-label="Transcript"
-      aria-live="polite"
-      style={{
-        background: "var(--surface)",
-        borderRadius: "var(--radius-md)",
-        padding: "var(--space-4)",
-        boxShadow: "var(--shadow)",
-        minHeight: 120,
-        maxHeight: "min(50vh, 420px)",
-        overflowY: "auto",
-        display: "grid",
-        gap: "var(--space-2)",
-        alignContent: "start",
-      }}
-    >
+    <section ref={box} tabIndex={0} aria-label="Transcript" aria-live="polite" className="messages">
       {segments.length === 0 && !thinking ? (
         <p style={{ color: "var(--ink-muted)" }}>{emptyText}</p>
       ) : (
@@ -53,23 +36,15 @@ export function Transcript({ segments, activeIndex, emptyText = "The conversatio
           <p
             key={`${i}-${seg.say}`}
             aria-current={i === activeIndex ? "true" : undefined}
-            style={{
-              fontWeight: i === activeIndex ? 600 : 400,
-              color: seg.who === "you" ? "var(--ink-muted)" : "var(--ink)",
-              transition: "color var(--dur-fast) var(--ease-out)",
-            }}
+            className={`bubble ${seg.who === "you" ? "bubble-you" : "bubble-robot"}${i === activeIndex ? " bubble-active" : ""}`}
           >
-            {seg.who ? (
-              <span style={{ fontSize: "var(--text-small)", marginRight: "var(--space-2)", opacity: 0.8 }}>
-                {seg.who === "you" ? "You:" : "Robot:"}
-              </span>
-            ) : null}
+            {seg.who ? <span className="who">{seg.who === "you" ? "You" : "Robot"}</span> : null}
             {seg.say}
           </p>
         ))
       )}
       {thinking ? (
-        <p role="status" style={{ color: "var(--ink-muted)", fontStyle: "italic" }}>
+        <p role="status" className="bubble bubble-robot" style={{ fontStyle: "italic" }}>
           Robot is thinking
           <span aria-hidden="true">
             <span className="thinking-dot" />

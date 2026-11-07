@@ -1,0 +1,30 @@
+# Render Blueprint for the backend (free web service). Values marked sync: false are entered by the
+# author in the Render dashboard; no secret is ever committed. See DEPLOY.md.
+services:
+  - type: web
+    name: wellness-robot-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: CLIENT_IP_HEADER
+        value: cf-connecting-ip
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: RESPONDER_MODEL
+        sync: false
+      - key: CLASSIFIER_MODEL
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        sync: false
+      - key: ELEVENLABS_MODEL_ID
+        sync: false

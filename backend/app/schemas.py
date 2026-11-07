@@ -11,6 +11,9 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+MAX_STEP_CHARS = 160
+
+
 class RiskLevel(str, Enum):
     none = "none"
     elevated = "elevated"
@@ -80,6 +83,8 @@ class Turn(BaseModel):
     exercise: ExerciseId | None = None
     # Scripted in code (app/exercises.py), never written by the model.
     exercise_steps: list[str] = Field(default_factory=list, max_length=12)
+    # One small step the person agreed to. Written by the model, checked in code.
+    plan_step: str | None = Field(default=None, min_length=1, max_length=MAX_STEP_CHARS)
     resources: list[Resource] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -88,6 +93,8 @@ class Turn(BaseModel):
             return self
         if self.exercise is not None or self.exercise_steps:
             raise ValueError("safe mode allows no exercise")
+        if self.plan_step is not None:
+            raise ValueError("safe mode allows no plan step")
         for seg in self.segments:
             if seg.gesture is not Gesture.none or seg.expression is not Expression.neutral:
                 raise ValueError("safe mode requires neutral expression and no gesture")
@@ -111,6 +118,8 @@ class TurnRequest(BaseModel):
     history: list[HistoryItem] = Field(default_factory=list, max_length=MAX_HISTORY_ITEMS)
     # Set by the UI after any safe-mode Turn. It can only raise the risk floor.
     safe_locked: bool = False
+    # The next step the UI is showing, so the robot can follow up on it. Treated as data.
+    current_step: str | None = Field(default=None, max_length=MAX_STEP_CHARS)
 
 
 class TTSRequest(BaseModel):

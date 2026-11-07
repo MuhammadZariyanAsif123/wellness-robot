@@ -39,6 +39,14 @@ def test_preflight_disallowed_origin():
     assert "access-control-allow-origin" not in response.headers
 
 
+def test_several_origins_are_each_allowed_exactly():
+    other = "https://app.example.com"
+    client = TestClient(create_app(Settings(frontend_origin=f"{ALLOWED}, {other}")))
+    assert client.get("/health", headers={"Origin": other}).headers.get("access-control-allow-origin") == other
+    assert client.get("/health", headers={"Origin": ALLOWED}).headers.get("access-control-allow-origin") == ALLOWED
+    assert "access-control-allow-origin" not in client.get("/health", headers={"Origin": DISALLOWED}).headers
+
+
 def test_api_key_is_secret():
     settings = Settings(frontend_origin=ALLOWED, gemini_api_key="sk-test-123")
     assert "sk-test-123" not in repr(settings)

@@ -157,6 +157,8 @@ export interface components {
             exercise?: components["schemas"]["ExerciseId"] | null;
             /** Exercise Steps */
             exercise_steps?: string[];
+            /** Plan Step */
+            plan_step?: string | null;
             /** Resources */
             resources?: components["schemas"]["Resource"][];
         };
@@ -174,6 +176,8 @@ export interface components {
              * @default false
              */
             safe_locked: boolean;
+            /** Current Step */
+            current_step?: string | null;
         };
         /** ValidationError */
         ValidationError: {

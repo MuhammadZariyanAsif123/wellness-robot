@@ -51,6 +51,36 @@ describe("BrowserVoice", () => {
     expect(cancel).toHaveBeenCalled();
   });
 
+  it("waits for voices that load late instead of falling back", async () => {
+    let voices: SpeechSynthesisVoice[] = [];
+    let onChange: () => void = () => undefined;
+    const spoken: string[] = [];
+    const synth = {
+      speak: (u: SpeechSynthesisUtterance) => {
+        spoken.push(u.text);
+        u.onend?.(new Event("end") as SpeechSynthesisEvent);
+      },
+      cancel: () => undefined,
+      getVoices: () => voices,
+      addEventListener: (_t: "voiceschanged", l: () => void) => {
+        onChange = l;
+      },
+      removeEventListener: () => undefined,
+    };
+    const fallback = vi.fn(async () => undefined);
+    const voice = new BrowserVoice({
+      synth,
+      fallback,
+      makeUtterance: (t) => ({ text: t }) as SpeechSynthesisUtterance,
+    });
+    const pending = voice.speak("hello", new AbortController().signal);
+    voices = [{ lang: "en-GB" } as SpeechSynthesisVoice];
+    onChange();
+    await pending;
+    expect(spoken).toEqual(["hello"]);
+    expect(fallback).not.toHaveBeenCalled();
+  });
+
   it("falls back to timing when the browser has no voices", async () => {
     const { voice, fallback } = setup([]);
     await voice.speak("hello", new AbortController().signal);

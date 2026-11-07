@@ -15,18 +15,27 @@ export async function postTurn(
   message: string,
   history: readonly HistoryItem[],
   safeLocked: boolean,
+  currentStep: string | null,
   baseUrl: string | undefined = process.env.NEXT_PUBLIC_API_URL,
   fetchImpl: typeof fetch = fetch,
 ): Promise<TurnOutcome> {
   if (!baseUrl) return { ok: false, reason: "API URL is not configured" };
-  const body: TurnRequest = { message, history: [...history], safe_locked: safeLocked };
-  try {
-    const res = await fetchImpl(`${baseUrl}/turn`, {
+  const body: TurnRequest = {
+    message,
+    history: [...history],
+    safe_locked: safeLocked,
+    ...(currentStep ? { current_step: currentStep } : {}),
+  };
+  const send = (): Promise<Response> =>
+    fetchImpl(`${baseUrl}/turn`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
+  try {
+    // A free host may be asleep: retry once on a network error or timeout (never on an HTTP error reply).
+    const res = await send().catch(() => send());
     if (!res.ok) return { ok: false, reason: `server returned ${res.status}` };
     const parsed = parseTurn(await res.json());
     return parsed.ok ? { ok: true, turn: parsed.turn } : { ok: false, reason: parsed.reason };

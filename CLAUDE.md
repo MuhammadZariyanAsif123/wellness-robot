@@ -18,7 +18,7 @@ This is a portfolio POC: a browser app with an animated robot that acts as a **w
 - Add `evals/heldout/` to `.gitignore`.
 
 ## Privacy
-- Do not store or log user messages or model replies. No database, cookies, analytics, or localStorage (except the voice preference).
+- Do not store or log user messages or model replies. No database, cookies, analytics, or localStorage, except the voice preference and, only after the user opts in, one next-step text with its date (`frontend/src/lib/stepStore.ts`; never messages, replies or risk levels; expires after 14 days; deletable by the user).
 - The logger records event names, timings, and risk levels only.
 - Never read, print, echo, or commit `.env` or any key. Use `.env.example` for names only.
 - Keep API keys in `backend/.env` only. The browser never sees them, and `frontend/.env.local` holds only `NEXT_PUBLIC_API_URL`.
