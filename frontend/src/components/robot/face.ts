@@ -54,11 +54,12 @@ export function faceLayout(f: Live, w = FACE_W, h = FACE_H): FaceLayout {
       { cx: w / 2 + dx, cy: browY, half: 15 * k, deg: f.browTilt },
     ],
     mouth: { x1: w / 2 - half, x2: w / 2 + half, y: my, cpY: my + f.mouthCurve * k * 1.6 },
+    // Open mouth: an ellipse hanging from the mouth line, big enough to read at a glance.
     mouthOpen: {
       cx: w / 2,
-      cy: my + 3 * k + f.mouthOpen * 3 * k,
-      rx: (f.mouthWidth * k * 1.5) / 3,
-      ry: Math.max(f.mouthOpen * 7 * k * 0.8, 0),
+      cy: my + f.mouthOpen * 6 * k,
+      rx: (f.mouthWidth * k * 1.5) / 2.4,
+      ry: Math.max(f.mouthOpen * 12 * k, 0),
     },
     blush: [-1, 1].map((s) => ({
       cx: w / 2 + s * w * 0.36,

@@ -233,17 +233,19 @@ export function RobotModel({ expression, state, reducedMotionOverride, gesture }
     () => {
       if (!visual.talk) return;
       if (reduced) {
-        live.current.mouthOpen = 0.5;
+        live.current.mouthOpen = 0.6;
         draw();
       } else {
-        gsap.to(live.current, {
-          mouthOpen: 1,
-          duration: 0.16,
-          yoyo: true,
-          repeat: -1,
-          ease: "sine.inOut",
-          onUpdate: draw,
-        });
+        // Speech-like rhythm: uneven openings, with a short pause every few syllables.
+        const tl = gsap.timeline({ repeat: -1, onUpdate: draw });
+        for (let i = 0; i < 16; i += 1) {
+          tl.to(live.current, {
+            mouthOpen: gsap.utils.random(0.35, 1),
+            duration: gsap.utils.random(0.08, 0.16),
+            ease: "sine.inOut",
+          });
+          if (i % 4 === 3) tl.to(live.current, { mouthOpen: 0.08, duration: 0.12, ease: "sine.inOut" });
+        }
       }
       return () => {
         live.current.mouthOpen = 0;
