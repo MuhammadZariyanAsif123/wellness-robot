@@ -7,12 +7,12 @@ dependencies = [
     "uvicorn",
     "pydantic-settings",
     "google-genai>=2.3.0",
+    "httpx",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "httpx",
 ]
 
 [tool.pytest.ini_options]

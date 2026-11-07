@@ -64,6 +64,60 @@
           }
         }
       }
+    },
+    "/tts/status": {
+      "get": {
+        "summary": "Tts Status",
+        "operationId": "tts_status_tts_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TTSStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tts": {
+      "post": {
+        "summary": "Tts",
+        "operationId": "tts_tts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TTSRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -222,6 +276,34 @@
           "gesture"
         ],
         "title": "Segment"
+      },
+      "TTSRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "TTSRequest"
+      },
+      "TTSStatus": {
+        "properties": {
+          "elevenlabs": {
+            "type": "boolean",
+            "title": "Elevenlabs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "elevenlabs"
+        ],
+        "title": "TTSStatus"
       },
       "Turn": {
         "properties": {

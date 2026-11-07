@@ -5,8 +5,10 @@ import { Robot3D } from "@/components/robot/Robot3D";
 import type { GestureCommand } from "@/components/robot/gestures";
 import { Transcript, type TranscriptEntry } from "@/components/Transcript";
 import { postTurn } from "@/lib/api";
-import { playTurn, timedSpeaker } from "@/lib/sequencer";
+import { playTurn } from "@/lib/sequencer";
 import type { Expression, HistoryItem, RobotState, Turn } from "@/lib/turn";
+import { VoiceControls } from "@/components/VoiceControls";
+import { useVoice } from "@/lib/voice/useVoice";
 
 const HISTORY_LIMIT = 10;
 const NEUTRAL_ERROR = "I couldn't get a reply just now. Please try again in a moment.";
@@ -51,6 +53,13 @@ export function Chat() {
   const abort = useRef<AbortController | null>(null);
   const safeLocked = safeTurn !== null;
 
+  const voice = useVoice({
+    onInterim: (text) => setDraft(text),
+    onFinal: (text) => void send(text),
+  });
+  // Safe mode stays neutral; otherwise the robot shows it is listening while the mic is held.
+  const robotState: RobotState = safeLocked ? "safe" : voice.listening ? "listening" : state;
+
   // Safe mode switches the page tokens; reload is the only way out (SPEC section 4).
   useEffect(() => {
     if (safeLocked) document.documentElement.dataset.mode = "safe";
@@ -73,8 +82,14 @@ export function Chat() {
     history.current = [...history.current, item].slice(-HISTORY_LIMIT);
   };
 
-  const send = async (): Promise<void> => {
-    const text = draft.trim();
+  /** Stops the robot mid-speech (Stop button, or the user starts talking). */
+  const stopSpeaking = (): void => {
+    abort.current?.abort();
+    voice.cancelSpeech();
+  };
+
+  const send = async (override?: string): Promise<void> => {
+    const text = (override ?? draft).trim();
     if (!text || busy) return;
     setDraft("");
     setBusy(true);
@@ -108,14 +123,19 @@ export function Chat() {
       {
         setExpression,
         playGesture: (g, count) => setGesture({ id: gestureId.current++, gesture: g, count }),
-        speak: timedSpeaker(),
-        isUserSpeaking: () => false,
+        speak: voice.speak,
+        isUserSpeaking: voice.isListening,
       },
       ctl.signal,
       (i) => setActive(base + i),
     );
-    if (ctl.signal.aborted) return;
     setActive(null);
+    if (ctl.signal.aborted) {
+      // Stopped by the user: back to rest, ready for the next message.
+      setState(isSafe ? "safe" : "idle");
+      setBusy(false);
+      return;
+    }
     if (!isSafe && turn.exercise) {
       setExerciseTurn(turn);
       setState("exercise");
@@ -137,14 +157,14 @@ export function Chat() {
         padding: "var(--space-7) var(--space-5)",
       }}
     >
-      <Robot3D expression={expression} state={state} gesture={gesture} />
+      <Robot3D expression={expression} state={robotState} gesture={gesture} />
 
       <div style={{ display: "grid", gap: "var(--space-5)" }}>
         <h1 style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-display)", lineHeight: 1.2, fontWeight: 500 }}>
           I&apos;m a wellness companion, not a therapist or a medical service.
         </h1>
 
-        <Transcript segments={entries} activeIndex={active} thinking={state === "thinking"} emptyText="Tell me how you're doing today." />
+        <Transcript segments={entries} activeIndex={active} thinking={state === "thinking" && !voice.listening} emptyText="Tell me how you're doing today." />
 
         {exerciseTurn ? (
           <section aria-label="Exercise" style={{ background: "var(--surface)", borderRadius: "var(--radius-md)", padding: "var(--space-4)", boxShadow: "var(--shadow)" }}>
@@ -199,6 +219,23 @@ export function Chat() {
             Send
           </button>
         </form>
+
+        <VoiceControls
+          preference={voice.preference}
+          onPreference={voice.setPreference}
+          elevenAvailable={voice.elevenAvailable}
+          micSupported={voice.micSupported}
+          listening={voice.listening}
+          micError={voice.micError}
+          onMicStart={() => {
+            stopSpeaking();
+            voice.startListening();
+          }}
+          onMicStop={voice.stopListening}
+          onStopSpeaking={stopSpeaking}
+          speaking={state === "speaking" || state === "exercise"}
+          disabled={state === "thinking"}
+        />
       </div>
     </main>
   );

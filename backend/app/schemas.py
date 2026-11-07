@@ -95,6 +95,7 @@ class Turn(BaseModel):
 
 
 MAX_MESSAGE_CHARS = 2000
+MAX_TTS_CHARS = 600
 MAX_HISTORY_ITEMS = 10
 
 
@@ -110,3 +111,11 @@ class TurnRequest(BaseModel):
     history: list[HistoryItem] = Field(default_factory=list, max_length=MAX_HISTORY_ITEMS)
     # Set by the UI after any safe-mode Turn. It can only raise the risk floor.
     safe_locked: bool = False
+
+
+class TTSRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=MAX_TTS_CHARS)
+
+
+class TTSStatus(BaseModel):
+    elevenlabs: bool

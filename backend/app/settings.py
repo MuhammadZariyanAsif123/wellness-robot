@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     # Empty means "not configured": the pipeline then fails safe, never open.
     responder_model: str = ""
     classifier_model: str = ""
+    # Optional ElevenLabs voice. Without a key /tts answers 503 and the UI uses the browser voice.
+    elevenlabs_api_key: SecretStr | None = None
+    elevenlabs_voice_id: str = ""
+    elevenlabs_model_id: str = ""  # empty = the API's default model
+    tts_rate_limit: int = 30
     # In-memory rate limit for /turn: requests per window, per client address.
     turn_rate_limit: int = 20
     turn_rate_window_seconds: int = 60
