@@ -39,7 +39,7 @@ browser (Next.js UI, voice in/out)
 UI plays each segment: speak + expression + gesture, in order
 ```
 - **Repository layout:** `frontend/` (Next.js App Router, TypeScript strict, UI only: robot, gestures, voice, transcript), `backend/` (Python FastAPI: risk router, responder, exercises, `/turn`, `/tts`), `evals/` (test messages), `docs/`.
-- **The backend calls the Anthropic API.** Keys live in `backend/.env` only. The frontend `.env.local` holds only `NEXT_PUBLIC_API_URL`. The browser never sees a key.
+- **The backend calls the Gemini API** (changed from Anthropic at the author's request, to use a free key; free-tier content may be used by Google to improve its products, so only synthetic test messages are used on it). Keys live in `backend/.env` only. The frontend `.env.local` holds only `NEXT_PUBLIC_API_URL`. The browser never sees a key.
 - **CORS** is limited to the frontend's origin.
 - **Pydantic models are the single source of truth** for the request and response contracts. Generate the frontend's TypeScript types from FastAPI's OpenAPI schema (for example with `openapi-typescript`). Do not hand-write the types twice.
 - No database. No accounts. No analytics.
@@ -154,8 +154,8 @@ Set every **[DECIDE]** target before the first run.
 
 ## 10. Stack and configuration
 - **Frontend:** Next.js, TypeScript strict, a motion library (Framer Motion or GSAP, **[DECIDE]**), vitest for unit tests, `openapi-typescript` (or similar) for generated types.
-- **Backend:** Python 3.11 or newer, FastAPI, uvicorn, Pydantic v2, the `anthropic` SDK, httpx, pytest, python-dotenv or pydantic-settings, and a rate-limiting approach (simple in-memory is enough). Use a virtual environment. If a package doesn't install on the author's Python version, report it and propose a 3.12 or 3.13 environment instead of working around it.
-- `.env.example` (names only): `ANTHROPIC_API_KEY`, `RESPONDER_MODEL`, `CLASSIFIER_MODEL`, `ELEVENLABS_API_KEY` (optional). Confirm current model identifiers in the official docs before choosing; a smaller model is usually enough for the classifier.
+- **Backend:** Python 3.11 or newer, FastAPI, uvicorn, Pydantic v2, the `google-genai` SDK, httpx, pytest, python-dotenv or pydantic-settings, and a rate-limiting approach (simple in-memory is enough). Use a virtual environment. If a package doesn't install on the author's Python version, report it and propose a 3.12 or 3.13 environment instead of working around it.
+- `.env.example` (names only): `GEMINI_API_KEY`, `RESPONDER_MODEL`, `CLASSIFIER_MODEL`, `ELEVENLABS_API_KEY` (optional). Confirm current model identifiers in the official docs before choosing; a smaller model is usually enough for the classifier.
 - Check current docs for each library version before using it.
 
 ## 11. Slices (stop and report after each)

@@ -129,3 +129,20 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+/* "Thinking" indicator in the transcript: three dots fade in turn (off under reduced motion). */
+@keyframes thinking-dot {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+.thinking-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: thinking-dot 1.2s infinite ease-in-out;
+}
+.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.4s; }

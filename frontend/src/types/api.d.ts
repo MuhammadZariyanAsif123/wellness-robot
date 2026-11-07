@@ -3,7 +3,42 @@
  * Do not make direct changes to the file.
  */
 
-export type paths = Record<string, never>;
+export interface paths {
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health */
+        get: operations["health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/turn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn */
+        post: operations["turn_turn_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
@@ -22,6 +57,21 @@ export interface components {
          * @enum {string}
          */
         Gesture: "none" | "wave" | "nod" | "hand_on_chest" | "open_palms" | "count" | "point_to_light" | "thumbs_up" | "palm_out" | "clap" | "open_arms";
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HistoryItem */
+        HistoryItem: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "robot";
+            /** Text */
+            text: string;
+        };
         /** Resource */
         Resource: {
             /** Name */
@@ -47,11 +97,8 @@ export interface components {
             say: string;
             expression: components["schemas"]["Expression"];
             gesture: components["schemas"]["Gesture"];
-            /**
-             * Count
-             * @default null
-             */
-            count: (1 | 2 | 3 | 4 | 5) | null;
+            /** Count */
+            count?: (1 | 2 | 3 | 4 | 5) | null;
         };
         /** Turn */
         Turn: {
@@ -63,10 +110,39 @@ export interface components {
             mode: "normal" | "safe";
             /** Segments */
             segments: components["schemas"]["Segment"][];
-            /** @default null */
-            exercise: components["schemas"]["ExerciseId"] | null;
+            exercise?: components["schemas"]["ExerciseId"] | null;
+            /** Exercise Steps */
+            exercise_steps?: string[];
             /** Resources */
             resources?: components["schemas"]["Resource"][];
+        };
+        /**
+         * TurnRequest
+         * @description Body of POST /turn. History lives in the browser's memory only.
+         */
+        TurnRequest: {
+            /** Message */
+            message: string;
+            /** History */
+            history?: components["schemas"]["HistoryItem"][];
+            /**
+             * Safe Locked
+             * @default false
+             */
+            safe_locked: boolean;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -76,4 +152,60 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    health_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    turn_turn_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TurnRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Turn"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+}

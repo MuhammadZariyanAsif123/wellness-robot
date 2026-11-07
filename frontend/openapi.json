@@ -1,13 +1,75 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Wellness Robot contracts",
+    "title": "Wellness Robot API",
     "version": "0.1.0"
   },
-  "paths": {},
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/turn": {
+      "post": {
+        "summary": "Turn",
+        "operationId": "turn_turn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Turn"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "components": {
     "schemas": {
       "ExerciseId": {
+        "type": "string",
         "enum": [
           "grounding_54321",
           "box_breathing",
@@ -16,10 +78,10 @@
           "winddown",
           "consistency_checkin"
         ],
-        "title": "ExerciseId",
-        "type": "string"
+        "title": "ExerciseId"
       },
       "Expression": {
+        "type": "string",
         "enum": [
           "neutral",
           "warm",
@@ -28,10 +90,10 @@
           "happy",
           "calm"
         ],
-        "title": "Expression",
-        "type": "string"
+        "title": "Expression"
       },
       "Gesture": {
+        "type": "string",
         "enum": [
           "none",
           "wave",
@@ -45,53 +107,88 @@
           "clap",
           "open_arms"
         ],
-        "title": "Gesture",
-        "type": "string"
+        "title": "Gesture"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryItem": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "robot"
+            ],
+            "title": "Role"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "text"
+        ],
+        "title": "HistoryItem"
       },
       "Resource": {
         "properties": {
           "name": {
-            "title": "Name",
-            "type": "string"
+            "type": "string",
+            "title": "Name"
           },
           "contact": {
-            "title": "Contact",
-            "type": "string"
+            "type": "string",
+            "title": "Contact"
           },
           "country": {
-            "title": "Country",
-            "type": "string"
+            "type": "string",
+            "title": "Country"
           },
           "verifiedOn": {
+            "type": "string",
             "format": "date",
-            "title": "Verifiedon",
-            "type": "string"
+            "title": "Verifiedon"
           }
         },
+        "type": "object",
         "required": [
           "name",
           "contact",
           "country",
           "verifiedOn"
         ],
-        "title": "Resource",
-        "type": "object"
+        "title": "Resource"
       },
       "RiskLevel": {
+        "type": "string",
         "enum": [
           "none",
           "elevated",
           "high"
         ],
-        "title": "RiskLevel",
-        "type": "string"
+        "title": "RiskLevel"
       },
       "Segment": {
         "properties": {
           "say": {
+            "type": "string",
             "minLength": 1,
-            "title": "Say",
-            "type": "string"
+            "title": "Say"
           },
           "expression": {
             "$ref": "#/components/schemas/Expression"
@@ -102,30 +199,29 @@
           "count": {
             "anyOf": [
               {
+                "type": "integer",
                 "enum": [
                   1,
                   2,
                   3,
                   4,
                   5
-                ],
-                "type": "integer"
+                ]
               },
               {
                 "type": "null"
               }
             ],
-            "default": null,
             "title": "Count"
           }
         },
+        "type": "object",
         "required": [
           "say",
           "expression",
           "gesture"
         ],
-        "title": "Segment",
-        "type": "object"
+        "title": "Segment"
       },
       "Turn": {
         "properties": {
@@ -133,21 +229,21 @@
             "$ref": "#/components/schemas/RiskLevel"
           },
           "mode": {
+            "type": "string",
             "enum": [
               "normal",
               "safe"
             ],
-            "title": "Mode",
-            "type": "string"
+            "title": "Mode"
           },
           "segments": {
             "items": {
               "$ref": "#/components/schemas/Segment"
             },
+            "type": "array",
             "maxItems": 5,
             "minItems": 1,
-            "title": "Segments",
-            "type": "array"
+            "title": "Segments"
           },
           "exercise": {
             "anyOf": [
@@ -157,24 +253,100 @@
               {
                 "type": "null"
               }
-            ],
-            "default": null
+            ]
+          },
+          "exercise_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Exercise Steps"
           },
           "resources": {
             "items": {
               "$ref": "#/components/schemas/Resource"
             },
-            "title": "Resources",
-            "type": "array"
+            "type": "array",
+            "title": "Resources"
           }
         },
+        "type": "object",
         "required": [
           "risk",
           "mode",
           "segments"
         ],
-        "title": "Turn",
-        "type": "object"
+        "title": "Turn"
+      },
+      "TurnRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryItem"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "History"
+          },
+          "safe_locked": {
+            "type": "boolean",
+            "title": "Safe Locked",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "TurnRequest",
+        "description": "Body of POST /turn. History lives in the browser's memory only."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }

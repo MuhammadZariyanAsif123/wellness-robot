@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.config import Settings
+from app.settings import Settings
 from app.main import create_app
 
 ALLOWED = "http://localhost:3000"
@@ -40,6 +40,6 @@ def test_preflight_disallowed_origin():
 
 
 def test_api_key_is_secret():
-    settings = Settings(frontend_origin=ALLOWED, anthropic_api_key="sk-test-123")
+    settings = Settings(frontend_origin=ALLOWED, gemini_api_key="sk-test-123")
     assert "sk-test-123" not in repr(settings)
     assert "sk-test-123" not in str(settings)

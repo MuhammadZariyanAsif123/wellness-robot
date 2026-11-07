@@ -78,15 +78,35 @@ class Turn(BaseModel):
     mode: Literal["normal", "safe"]
     segments: list[Segment] = Field(min_length=1, max_length=5)
     exercise: ExerciseId | None = None
+    # Scripted in code (app/exercises.py), never written by the model.
+    exercise_steps: list[str] = Field(default_factory=list, max_length=12)
     resources: list[Resource] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def safe_mode_invariants(self) -> Self:
         if self.mode != "safe":
             return self
-        if self.exercise is not None:
+        if self.exercise is not None or self.exercise_steps:
             raise ValueError("safe mode allows no exercise")
         for seg in self.segments:
             if seg.gesture is not Gesture.none or seg.expression is not Expression.neutral:
                 raise ValueError("safe mode requires neutral expression and no gesture")
         return self
+
+
+MAX_MESSAGE_CHARS = 2000
+MAX_HISTORY_ITEMS = 10
+
+
+class HistoryItem(BaseModel):
+    role: Literal["user", "robot"]
+    text: str = Field(max_length=MAX_MESSAGE_CHARS)
+
+
+class TurnRequest(BaseModel):
+    """Body of POST /turn. History lives in the browser's memory only."""
+
+    message: str = Field(min_length=1, max_length=MAX_MESSAGE_CHARS)
+    history: list[HistoryItem] = Field(default_factory=list, max_length=MAX_HISTORY_ITEMS)
+    # Set by the UI after any safe-mode Turn. It can only raise the risk floor.
+    safe_locked: bool = False

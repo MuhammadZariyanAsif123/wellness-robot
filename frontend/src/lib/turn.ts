@@ -8,6 +8,8 @@ export type RiskLevel = components["schemas"]["RiskLevel"];
 export type Segment = components["schemas"]["Segment"];
 export type Resource = components["schemas"]["Resource"];
 export type Turn = components["schemas"]["Turn"];
+export type TurnRequest = components["schemas"]["TurnRequest"];
+export type HistoryItem = components["schemas"]["HistoryItem"];
 
 export type RobotState =
   | "idle"
