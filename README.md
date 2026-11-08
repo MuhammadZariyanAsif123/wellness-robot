@@ -32,6 +32,9 @@ npm run dev
 npm test
 ```
 
+## Regenerating the API types
+The frontend types come from the backend schema, never hand-copied. After changing `backend/app/schemas.py`, from `backend/` run `python -m app.export_openapi ../frontend/openapi.json` to refresh `frontend/openapi.json`, then from `frontend/` run `npm run gen:types`.
+
 ## Status and known gaps
 - **Crisis resources are not filled in yet.** `backend/app/config/resources.py` must be completed from official sources before any public use; until then safe mode shows a generic line and a developer warning.
 - **Evaluation is incomplete.** The scored evaluation run and the held-out set are still to do, so no accuracy figures are claimed.
