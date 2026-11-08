@@ -1,4 +1,4 @@
-# Runtime dependencies for hosts that install with pip (e.g. Render).
+# Runtime dependencies for hosts that install with pip (e.g. Vercel).
 # pyproject.toml remains the source of truth: keep these in step with it.
 fastapi
 uvicorn

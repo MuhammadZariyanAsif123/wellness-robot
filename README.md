@@ -41,4 +41,4 @@ The frontend types come from the backend schema, never hand-copied. After changi
 - English only for now.
 
 ## Deploying
-See [DEPLOY.md](DEPLOY.md) (Vercel for the frontend, Render for the backend).
+See [DEPLOY.md](DEPLOY.md) (two Vercel projects: frontend and backend).
